@@ -4,13 +4,13 @@
 extern NSDictionary *statusImages;
 
 @class FilesController;
-@class PrefsController;
+@class EnhancedPrefsController;
 
 @interface ImageOptimController : NSObject<NSApplicationDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate> {
     IBOutlet NSTableView *tableView;
     IBOutlet FilesController *__unsafe_unretained filesController;
 
-    PrefsController *prefsController;
+    EnhancedPrefsController *prefsController;
 
     IBOutlet NSTextField *statusBarLabel;
     IBOutlet NSTextView *credits;

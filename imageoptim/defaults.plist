@@ -46,5 +46,15 @@
 	<true/>
 	<key>BounceDock</key>
 	<true/>
+	<key>TargetWidth</key>
+	<integer>0</integer>
+	<key>TargetHeight</key>
+	<integer>0</integer>
+	<key>ResizeMode</key>
+	<integer>0</integer>
+	<key>OutputFormat</key>
+	<integer>0</integer>
+	<key>OutputQuality</key>
+	<real>0.85</real>
 </dict>
 </plist>

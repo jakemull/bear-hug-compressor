@@ -278,6 +278,15 @@ static NSString *kIMDraggedRowIndexesPboardType = @"com.imageoptim.rows";
         IOWarn("bad paths obj %@", paths);
         return NO;
     }
+    
+    // Get processing settings from user defaults
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSInteger targetWidth = [defaults integerForKey:@"TargetWidth"];
+    NSInteger targetHeight = [defaults integerForKey:@"TargetHeight"];
+    NSInteger resizeMode = [defaults integerForKey:@"ResizeMode"];
+    NSInteger outputFormat = [defaults integerForKey:@"OutputFormat"];
+    CGFloat outputQuality = [defaults doubleForKey:@"OutputQuality"];
+    if (outputQuality <= 0) outputQuality = 0.85; // Default quality
 
     NSMutableArray<JobProxy *> *toAdd = [NSMutableArray arrayWithCapacity:[paths count]];
 
@@ -309,6 +318,14 @@ static NSString *kIMDraggedRowIndexesPboardType = @"com.imageoptim.rows";
             } else {
                 [seenPathHashes addObject:path]; // used by findFileByPath
                 Job *f = [[Job alloc] initWithFilePath:path resultsDatabase:db];
+                
+                // Apply processing settings to the job
+                f.targetWidth = targetWidth;
+                f.targetHeight = targetHeight;
+                f.resizeMode = resizeMode;
+                f.outputFormat = outputFormat;
+                f.outputQuality = outputQuality;
+                
                 JobProxy *jobProxy = [[JobProxy alloc] initWithJob:f];
                 [toAdd addObject:jobProxy];
                 [jobQueue addJob:f];

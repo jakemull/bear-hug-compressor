@@ -5,7 +5,7 @@
 #import "JobProxy.h"
 #import "File.h"
 #import "Backend/Workers/Worker.h"
-#import "PrefsController.h"
+#import "EnhancedPrefsController.h"
 #import "MyTableView.h"
 #import "SharedPrefs.h"
 #include <mach/mach_host.h>
@@ -345,14 +345,14 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
 
 - (IBAction)showPrefs:(id)sender {
     if (!prefsController) {
-        prefsController = [PrefsController new];
+        prefsController = [EnhancedPrefsController new];
     }
     [prefsController showWindow:self];
 }
 
 - (IBAction)showLossyPrefs:(id)sender {
     if (!prefsController) {
-        prefsController = [PrefsController new];
+        prefsController = [EnhancedPrefsController new];
     }
     [prefsController showLossySettings:sender];
 }

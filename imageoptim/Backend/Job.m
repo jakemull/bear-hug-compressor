@@ -18,6 +18,9 @@
 #import "Workers/SvgoWorker.h"
 #import "Workers/SvgcleanerWorker.h"
 #import "Workers/GuetzliWorker.h"
+#import "Workers/PreProcessWorker.h"
+#import "Workers/PostProcessWorker.h"
+#import "ImageProcessor.h"
 #import <sys/xattr.h>
 #import "log.h"
 #include "ResultsDb.h"
@@ -53,13 +56,18 @@
     BOOL preserveDates;
 }
 
-@synthesize workersPreviousResults, filePath, displayName, statusText, statusOrder, statusImageName, bestToolName, isFailed, isDone;
+@synthesize workersPreviousResults, filePath, displayName, statusText, statusOrder, statusImageName, bestToolName, isFailed, isDone, targetWidth, targetHeight, resizeMode, outputFormat, outputQuality;
 
 - (instancetype)initWithFilePath:(nonnull NSURL *)aPath resultsDatabase:(nullable ResultsDb *)aDb {
     if (self = [self init]) {
         workersPreviousResults = [NSMutableDictionary new];
         bestTools = [NSMutableDictionary new];
         filePath = aPath;
+        targetWidth = 0;
+        targetHeight = 0;
+        resizeMode = 0; // ImageResizeModeNone
+        outputFormat = 0; // ImageOutputFormatOriginal
+        outputQuality = 0.85;
         db = aDb;
         self.displayName = [[NSFileManager defaultManager] displayNameAtPath:filePath.path];
         [self setStatus:@"wait" order:0 text:NSLocalizedString(@"Waiting to be optimized", @"tooltip")];
@@ -445,6 +453,29 @@
         }
 
         [filePath removeAllCachedResourceValues];
+        
+        // Apply post-processing: format conversion
+        NSData *finalData = [NSData dataWithContentsOfURL:fileToSave.path];
+        if (finalData && self.outputFormat != 0) { // ImageOutputFormatOriginal
+            NSData *convertedData = [ImageProcessor convertImageData:finalData
+                                                            toFormat:(ImageOutputFormat)self.outputFormat
+                                                             quality:self.outputQuality];
+            if (convertedData && convertedData != finalData) {
+                // Update file extension if format changed
+                NSString *newExtension = [ImageProcessor fileExtensionForFormat:(ImageOutputFormat)self.outputFormat];
+                if (newExtension.length > 0) {
+                    NSURL *newFilePath = [[filePath URLByDeletingPathExtension] URLByAppendingPathExtension:newExtension];
+                    if (![convertedData writeToURL:newFilePath atomically:YES]) {
+                        IOWarn("Failed to write converted file to %@", newFilePath.path);
+                    } else {
+                        // Update the file path to the new format
+                        filePath = [newFilePath copy];
+                        IODebug("Converted output to %@ format", newExtension);
+                    }
+                }
+            }
+        }
+        
         self.savedOutput = [fileToSave copyOfPath:filePath size:fileToSave.byteSize];
         [self setFileOptimized:nil];
         if (isDropboxFolder) {
@@ -541,6 +572,19 @@
         [self setError:NSLocalizedString(@"Can't open the file", @"tooltip, generic loading error")];
         return;
     }
+    
+    // Apply pre-processing: resizing
+    if (self.resizeMode != 0 && (self.targetWidth > 0 || self.targetHeight > 0)) { // ImageResizeModeNone
+        NSData *resizedData = [ImageProcessor resizeImageData:fileData
+                                                     toWidth:self.targetWidth
+                                                    toHeight:self.targetHeight
+                                                  resizeMode:(ImageResizeMode)self.resizeMode];
+        if (resizedData && resizedData != fileData) {
+            fileData = resizedData;
+            length = [fileData length];
+            IODebug("Applied pre-processing resize to %@", filePath.path);
+        }
+    }
 
     BOOL hasChangedSinceLastSave = self.savedOutput && self.savedOutput.byteSize != input.byteSize;
     BOOL hasBeenRunBefore = self.initialInput && !hasChangedSinceLastSave;
@@ -561,6 +605,7 @@
 
     NSMutableArray *runFirst = [NSMutableArray new];
     NSMutableArray *runLater = [NSMutableArray new];
+    NSMutableArray *runLast = [NSMutableArray new];
 
     NSMutableArray *worker_list = [NSMutableArray new];
     NSInteger level = [defs integerForKey:@"AdvPngLevel"]; // AdvPNG setting is reused for all tools now
@@ -569,6 +614,12 @@
         dispatch_async(dispatch_get_main_queue(), ^() {
             [defs setBool:YES forKey:@"LossyUsed"];
         });
+    }
+    
+    // Add pre-processing worker if needed
+    if (self.resizeMode != 0 && (self.targetWidth > 0 || self.targetHeight > 0)) {
+        PreProcessWorker *preWorker = [[PreProcessWorker alloc] initWithJob:self];
+        [runFirst addObject:preWorker];
     }
 
     switch (input->fileType) {
@@ -645,6 +696,12 @@
             }
             break;
         default:
+    
+    // Add post-processing worker if needed
+    if (self.outputFormat != 0) { // Not ImageOutputFormatOriginal
+        PostProcessWorker *postWorker = [[PostProcessWorker alloc] initWithJob:self];
+        [runLast addObject:postWorker];
+    }
             [self setError:NSLocalizedString(@"File is neither PNG, GIF nor JPEG", @"tooltip")];
             [self cleanup];
             return;
@@ -669,7 +726,10 @@
     }
 
     // Create a hash that includes all optimization settings to invalidate file caches on settings changes
-    [self setSettingsHash:[runFirst arrayByAddingObjectsFromArray:runLater]];
+    NSMutableArray *allWorkers = [NSMutableArray arrayWithArray:runFirst];
+    [allWorkers addObjectsFromArray:runLater];
+    [allWorkers addObjectsFromArray:runLast];
+    [self setSettingsHash:allWorkers];
 
     // Can't check only file size, because then hash won't be available on save! if ([db hasResultWithFileSize:byteSizeOnDisk]) {
 #pragma GCC diagnostic push
@@ -714,10 +774,22 @@
         [queue addOperation:w];
         previousWorker = w;
     }
+    
+    // Add post-processing workers that run after all optimization
+    for (Worker *w in runLast) {
+        if (previousWorker) {
+            [w addDependency:previousWorker];
+            previousWorker.nextOperation = w;
+        }
+        [saveOp addDependency:w];
+        [queue addOperation:w];
+        previousWorker = w;
+    }
 
     [self willChangeValueForKey:@"isBusy"];
     [workers addObjectsFromArray:runFirst];
     [workers addObjectsFromArray:runLater];
+    [workers addObjectsFromArray:runLast];
     [self didChangeValueForKey:@"isBusy"];
 
     if (![workers count]) {
