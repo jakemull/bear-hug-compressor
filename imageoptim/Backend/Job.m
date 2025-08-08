@@ -22,6 +22,8 @@
 #import "Workers/PostProcessWorker.h"
 #import "Workers/PreProcessWorker.h"
 #import "Workers/PostProcessWorker.h"
+#import "Workers/PreProcessWorker.h"
+#import "Workers/PostProcessWorker.h"
 #import "ImageProcessor.h"
 #import <sys/xattr.h>
 #import "log.h"
@@ -609,6 +611,7 @@
     NSMutableArray *runLater = [NSMutableArray new];
     NSMutableArray *runLast = [NSMutableArray new];
     NSMutableArray *runLast = [NSMutableArray new];
+    NSMutableArray *runLast = [NSMutableArray new];
 
     NSMutableArray *worker_list = [NSMutableArray new];
     NSInteger level = [defs integerForKey:@"AdvPngLevel"]; // AdvPNG setting is reused for all tools now
@@ -617,6 +620,12 @@
         dispatch_async(dispatch_get_main_queue(), ^() {
             [defs setBool:YES forKey:@"LossyUsed"];
         });
+    }
+    
+    // Add pre-processing worker if needed
+    if (self.resizeMode != 0 && (self.targetWidth > 0 || self.targetHeight > 0)) {
+        PreProcessWorker *preWorker = [[PreProcessWorker alloc] initWithJob:self];
+        [runFirst addObject:preWorker];
     }
     
     // Add pre-processing worker if needed
@@ -717,6 +726,12 @@
         PostProcessWorker *postWorker = [[PostProcessWorker alloc] initWithJob:self];
         [runLast addObject:postWorker];
     }
+    
+    // Add post-processing worker if needed
+    if (self.outputFormat != 0) { // Not ImageOutputFormatOriginal
+        PostProcessWorker *postWorker = [[PostProcessWorker alloc] initWithJob:self];
+        [runLast addObject:postWorker];
+    }
             [self setError:NSLocalizedString(@"File is neither PNG, GIF nor JPEG", @"tooltip")];
             [self cleanup];
             return;
@@ -742,6 +757,9 @@
 
     // Create a hash that includes all optimization settings to invalidate file caches on settings changes
     NSMutableArray *allWorkers = [NSMutableArray arrayWithArray:runFirst];
+    [allWorkers addObjectsFromArray:runLater];
+    [allWorkers addObjectsFromArray:runLast];
+    [self setSettingsHash:allWorkers];
     [allWorkers addObjectsFromArray:runLater];
     [allWorkers addObjectsFromArray:runLast];
     [self setSettingsHash:allWorkers];
@@ -814,10 +832,22 @@
         [queue addOperation:w];
         previousWorker = w;
     }
+    
+    // Add post-processing workers that run after all optimization
+    for (Worker *w in runLast) {
+        if (previousWorker) {
+            [w addDependency:previousWorker];
+            previousWorker.nextOperation = w;
+        }
+        [saveOp addDependency:w];
+        [queue addOperation:w];
+        previousWorker = w;
+    }
 
     [self willChangeValueForKey:@"isBusy"];
     [workers addObjectsFromArray:runFirst];
     [workers addObjectsFromArray:runLater];
+    [workers addObjectsFromArray:runLast];
     [workers addObjectsFromArray:runLast];
     [workers addObjectsFromArray:runLast];
     [self didChangeValueForKey:@"isBusy"];

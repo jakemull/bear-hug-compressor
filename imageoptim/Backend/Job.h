@@ -13,6 +13,8 @@
 
 @class ImageProcessor;
 
+@class ImageProcessor;
+
 NS_ASSUME_NONNULL_BEGIN
 @interface Job : NSObject {
     NSURL *filePath;
@@ -32,6 +34,12 @@ NS_ASSUME_NONNULL_BEGIN
     ResultsDb *db;
     uint32_t settingsHash[4];
     uint32_t inputFileHash[4];
+
+    NSInteger targetWidth;
+    NSInteger targetHeight;
+    NSInteger resizeMode;
+    NSInteger outputFormat;
+    CGFloat outputQuality;
 
     NSInteger targetWidth;
     NSInteger targetHeight;
@@ -82,6 +90,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly, nonatomic) NSNumber *percentOptimized;
 @property (assign, readonly) NSInteger statusOrder;
 @property (strong, readonly) NSMutableDictionary *workersPreviousResults;
+
+@property (assign) NSInteger targetWidth;
+@property (assign) NSInteger targetHeight;
+@property (assign) NSInteger resizeMode;
+@property (assign) NSInteger outputFormat;
+@property (assign) CGFloat outputQuality;
 
 @property (assign) NSInteger targetWidth;
 @property (assign) NSInteger targetHeight;
