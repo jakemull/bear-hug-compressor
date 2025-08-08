@@ -3,7 +3,7 @@
 
 platform :osx, '10.15'
 
-target 'ImageOptim' do
+target 'ImageOptim\' do
   use_frameworks!
   
   # WebP support
