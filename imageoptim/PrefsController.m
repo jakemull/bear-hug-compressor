@@ -5,7 +5,7 @@
 //
 
 #import "PrefsController.h"
-#import "ImageOptimController.h"
+#import "BearHugController.h"
 #import "Transformers.h"
 
 static const char *kGuetzliContext = "guetzli";

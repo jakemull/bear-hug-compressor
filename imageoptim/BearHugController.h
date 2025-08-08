@@ -1,4 +1,4 @@
-/* ImageOptim */
+/* BearHug */
 #import <Quartz/Quartz.h>
 
 extern NSDictionary *statusImages;
@@ -6,7 +6,7 @@ extern NSDictionary *statusImages;
 @class FilesController;
 @class EnhancedPrefsController;
 
-@interface ImageOptimController : NSObject<NSApplicationDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate> {
+@interface BearHugController : NSObject<NSApplicationDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate> {
     IBOutlet NSTableView *tableView;
     IBOutlet FilesController *__unsafe_unretained filesController;
 

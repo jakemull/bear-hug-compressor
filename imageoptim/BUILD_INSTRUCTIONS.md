@@ -1,6 +1,6 @@
-# Building ImageOptim Enhanced with AVIF and WebP Support
+# Building BearHug with AVIF and WebP Support
 
-This guide explains how to build ImageOptim Enhanced with full AVIF and WebP support.
+This guide explains how to build BearHug with full AVIF and WebP support.
 
 ## Prerequisites
 
@@ -31,7 +31,7 @@ sudo gem install cocoapods
 Run the setup script from the project root:
 
 ```bash
-cd /path/to/your/ImageOptim
+cd /path/to/your/BearHug
 chmod +x Scripts/setup-dependencies.sh
 ./Scripts/setup-dependencies.sh
 ```
@@ -45,8 +45,8 @@ This script will:
 
 #### Add libavif to Your Project
 
-1. Open `ImageOptim.xcworkspace` (not .xcodeproj) in Xcode
-2. Right-click on your project and select "Add Files to ImageOptim"
+1. Open `BearHug.xcworkspace` (not .xcodeproj) in Xcode
+2. Right-click on your project and select "Add Files to BearHug"
 3. Navigate to `Dependencies/libavif/build/` and add `libavif.a`
 4. Add the libavif headers:
    - Go to Build Settings → Header Search Paths
@@ -70,12 +70,12 @@ Add these frameworks to your target:
 
 #### For Debug Builds
 ```bash
-xcodebuild -workspace ImageOptim.xcworkspace -scheme ImageOptim -configuration Debug
+xcodebuild -workspace BearHug.xcworkspace -scheme BearHug -configuration Debug
 ```
 
 #### For Release Builds
 ```bash
-xcodebuild -workspace ImageOptim.xcworkspace -scheme ImageOptim -configuration Release
+xcodebuild -workspace BearHug.xcworkspace -scheme BearHug -configuration Release
 ```
 
 ## Manual Library Installation (Alternative)

@@ -1,13 +1,13 @@
 #import "GetQueueCountCommand.h"
-#import "ImageOptimController.h"
+#import "BearHugController.h"
 #import "FilesController.h"
 
 @implementation GetQueueCountCommand
 
 - (id)performDefaultImplementation {
-    ImageOptimController *imageoptim = (ImageOptimController *)[[NSApplication sharedApplication] delegate];
+    BearHugController *bearhug = (BearHugController *)[[NSApplication sharedApplication] delegate];
 
-    return imageoptim.filesController.queueCount;
+    return bearhug.filesController.queueCount;
 }
 
 @end

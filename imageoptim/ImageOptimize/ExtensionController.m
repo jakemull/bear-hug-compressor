@@ -33,7 +33,7 @@
         NSLog(@"Got %d input items with %d attachments", (int)self.extensionContext.inputItems.count, (int)inputItem.attachments.count);
 
         if (!inputItem || !provider) {
-            NSLog(@"No items sent to the extension, nothing to optimize");
+            NSLog(@"No items sent to the extension, nothing to compress");
             [self cancel:self];
             return;
         }
@@ -44,7 +44,7 @@
             return;
         }
 
-        NSLog(@"ImageOptim extension loading image");
+        NSLog(@"BearHug extension loading image");
         tempFilePath = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]]];
         NSURL *tmpFilePathCopy = tempFilePath;
         [provider loadItemForTypeIdentifier:@"public.image"

@@ -1,4 +1,4 @@
-#import "ImageOptimController.h"
+#import "BearHugController.h"
 #import "FilesController.h"
 #import "RevealButtonCell.h"
 #import "Backend/Job.h"
@@ -12,7 +12,7 @@
 #include <mach/host_info.h>
 #import <Quartz/Quartz.h>
 
-@implementation ImageOptimController
+@implementation BearHugController
 
 extern int quitWhenDone;
 
@@ -358,19 +358,19 @@ static void appendFormatNameIfLossyEnabled(NSUserDefaults *defs, NSString *name,
 }
 
 - (IBAction)openApiHomepage:(id)sender {
-    [self openURL:@"https://imageoptim.com/app-api"];
+    [self openURL:@"https://bearhug.app/app-api"];
 }
 
 - (IBAction)openHomepage:(id)sender {
-    [self openURL:@"https://imageoptim.com"];
+    [self openURL:@"https://bearhug.app"];
 }
 
 - (IBAction)viewSource:(id)sender {
-    [self openURL:@"https://imageoptim.com/source"];
+    [self openURL:@"https://bearhug.app/source"];
 }
 
 - (IBAction)openDonationPage:(id)sender {
-    [self openURL:@"https://imageoptim.com/donate.html"];
+    [self openURL:@"https://bearhug.app/donate.html"];
 }
 
 - (void)openURL:(NSString *)stringURL {
