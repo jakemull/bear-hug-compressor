@@ -7,6 +7,7 @@
 //
 
 #import "ImageProcessor.h"
+#import "FormatConverters/FormatConverterFactory.h"
 #import "../log.h"
 
 @implementation ImageProcessor
@@ -103,51 +104,7 @@
 + (nullable NSData *)convertImageData:(NSData *)imageData
                              toFormat:(ImageOutputFormat)format
                               quality:(CGFloat)quality {
-    if (!imageData || format == ImageOutputFormatOriginal) {
-        return imageData;
-    }
-    
-    NSBitmapImageRep *imageRep = [NSBitmapImageRep imageRepWithData:imageData];
-    if (!imageRep) {
-        IOWarn("Failed to create image representation for format conversion");
-        return imageData;
-    }
-    
-    NSBitmapImageFileType fileType;
-    NSMutableDictionary *properties = [NSMutableDictionary dictionary];
-    
-    switch (format) {
-        case ImageOutputFormatJPEG:
-            fileType = NSBitmapImageFileTypeJPEG;
-            properties[NSImageCompressionFactor] = @(quality);
-            break;
-            
-        case ImageOutputFormatPNG:
-            fileType = NSBitmapImageFileTypePNG;
-            break;
-            
-        case ImageOutputFormatAVIF:
-        case ImageOutputFormatWebP:
-            // For AVIF and WebP, we'll need to use external tools or libraries
-            // For now, fall back to PNG
-            IOWarn("AVIF and WebP conversion not yet implemented, falling back to PNG");
-            fileType = NSBitmapImageFileTypePNG;
-            break;
-            
-        default:
-            return imageData;
-    }
-    
-    NSData *convertedData = [imageRep representationUsingType:fileType properties:properties];
-    
-    if (!convertedData) {
-        IOWarn("Failed to convert image to format %ld", (long)format);
-        return imageData;
-    }
-    
-    IODebug("Converted image to format %ld with quality %.2f", (long)format, quality);
-    
-    return convertedData;
+    return [FormatConverterFactory convertImageData:imageData toFormat:format quality:quality] ?: imageData;
 }
 
 + (NSString *)fileExtensionForFormat:(ImageOutputFormat)format {

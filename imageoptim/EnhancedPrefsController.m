@@ -7,7 +7,7 @@
 //
 
 #import "EnhancedPrefsController.h"
-#import "Backend/ImageProcessor.h"
+#import "Backend/FormatConverters/FormatConverterFactory.h"
 
 @implementation EnhancedPrefsController
 
@@ -30,11 +30,23 @@
     
     // Setup output format popup
     [self.outputFormatPopup removeAllItems];
-    [self.outputFormatPopup addItemWithTitle:@"Keep Original"];
-    [self.outputFormatPopup addItemWithTitle:@"JPEG"];
-    [self.outputFormatPopup addItemWithTitle:@"PNG"];
-    [self.outputFormatPopup addItemWithTitle:@"AVIF"];
-    [self.outputFormatPopup addItemWithTitle:@"WebP"];
+    
+    NSArray *formatTitles = @[@"Keep Original", @"JPEG", @"PNG", @"AVIF", @"WebP"];
+    NSArray<NSNumber *> *supportedFormats = [FormatConverterFactory supportedFormats];
+    
+    for (NSInteger i = 0; i < formatTitles.count; i++) {
+        NSNumber *formatNumber = @(i);
+        if ([supportedFormats containsObject:formatNumber]) {
+            NSString *title = formatTitles[i];
+            if (i == ImageOutputFormatAVIF && ![FormatConverterFactory isFormatSupported:ImageOutputFormatAVIF]) {
+                title = [title stringByAppendingString:@" (Not Available)"];
+            }
+            if (i == ImageOutputFormatWebP && ![FormatConverterFactory isFormatSupported:ImageOutputFormatWebP]) {
+                title = [title stringByAppendingString:@" (Not Available)"];
+            }
+            [self.outputFormatPopup addItemWithTitle:title];
+        }
+    }
     
     // Bind controls to user defaults
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
